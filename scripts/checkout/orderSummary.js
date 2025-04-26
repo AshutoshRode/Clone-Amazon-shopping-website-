@@ -3,15 +3,18 @@ import {
     removeFromCart,
     calculateCartQuantity,
     updateQuantity,
-    updateDeliveryOption
+    updateDeliveryOption,
+    
 } from "../../data/cart.js";
 import { products, getProduct } from "../../data/products.js";
 import { formatCurrency } from "../utils/money.js";
 
 import dayjs from "https://unpkg.com/supersimpledev@8.5.0/dayjs/esm/index.js";
 
-import { deliveryOptions, getDeliveryOption } from '../../data/deliveryOptions.js';
+import { deliveryOptions, getDeliveryOption, calculateDeliveryDate } from '../../data/deliveryOptions.js';
 import { renderPaymentSummary } from "./paymentSummary.js";
+
+import { renderCheckoutHeader } from "./checkoutHeader.js";
 
 // const today = dayjs();
 // const deliveryDate = today.add(7, 'days');
@@ -29,15 +32,8 @@ export function renderOrderSummary() {
         const deliveryOptionId = cartItem.deliveryOptionId;
 
         const deliveryOption = getDeliveryOption(deliveryOptionId);
-
-        const today = dayjs();
-        const deliveryDate = today.add(
-            deliveryOption.deliveryDays,
-            'days'
-        );
-        const dataString = deliveryDate.format(
-            'dddd, MMMM D'
-        );
+         
+        const dataString = calculateDeliveryDate(deliveryOption);
 
         cartSummaryHTML += `       
        <div class="cart-item-container
@@ -91,14 +87,7 @@ export function renderOrderSummary() {
 
         deliveryOptions.forEach((deliveryOption) => {
 
-            const today = dayjs();
-            const deliveryDate = today.add(
-                deliveryOption.deliveryDays,
-                'days'
-            );
-            const dataString = deliveryDate.format(
-                'dddd, MMMM D'
-            );
+              const dataString = calculateDeliveryDate(deliveryOption);
 
             const priceString = deliveryOption.priceCents === 0 ? 'FREE' : `$${formatCurrency(deliveryOption.priceCents)} -`;
 
@@ -137,10 +126,8 @@ export function renderOrderSummary() {
                 const productId = link.dataset.productId;
                 removeFromCart(productId);
 
-                const container = document.querySelector(`.js-cart-item-container-${productId}`
-                );
-                container.remove();
-
+                renderCheckoutHeader();
+                renderOrderSummary();
                 // updateCartQuantity();
                 renderPaymentSummary();
 
@@ -149,16 +136,14 @@ export function renderOrderSummary() {
         }
         );
 
-    function updateCartQuantity() {
-        let cartQuantity = calculateCartQuantity();
-
-        // cart.forEach((cartItem) => {
-        //     cartQuantity += cartItem.quantity;
-        //   });
-
-        document.querySelector('.js-return-to-home-link')
-            .innerHTML = `  ${cartQuantity} items  `;
-    }
+        function updateCartQuantity() {
+            const cartQuantity = calculateCartQuantity();
+            const returnLink = document.querySelector('.js-return-to-home-link');
+            
+            if (returnLink) {
+              returnLink.innerHTML = `${cartQuantity} items`;
+            }
+          }
     updateCartQuantity();
 
     document.querySelectorAll('.js-update-link')
@@ -217,4 +202,50 @@ export function renderOrderSummary() {
 
 
         });
+         // This code was copied from the solutions of exercises 14f - 14n.
+  document.querySelectorAll('.js-update-link')
+    .forEach((link) => {
+      link.addEventListener('click', () => {
+        const productId = link.dataset.productId;
+
+        const container = document.querySelector(
+          `.js-cart-item-container-${productId}`
+        );
+        container.classList.add('is-editing-quantity');
+      });
+    });
+
+  document.querySelectorAll('.js-save-link')
+    .forEach((link) => {
+      link.addEventListener('click', () => {
+        const productId = link.dataset.productId;
+
+        const container = document.querySelector(
+          `.js-cart-item-container-${productId}`
+        );
+        container.classList.remove('is-editing-quantity');
+
+        const quantityInput = document.querySelector(
+          `.js-quantity-input-${productId}`
+        );
+        const newQuantity = Number(quantityInput.value);
+        updateQuantity(productId, newQuantity);
+
+        renderCheckoutHeader();
+        renderOrderSummary();
+        renderPaymentSummary();
+
+        // We can delete the code below (from the original solution)
+        // because instead of using the DOM to update the page directly
+        // we can use MVC and re-render everything. This will make sure
+        // the page always matches the data.
+
+        // const quantityLabel = document.querySelector(
+        //   `.js-quantity-label-${productId}`
+        // );
+        // quantityLabel.innerHTML = newQuantity;
+
+        // updateCartQuantity();
+      });
+    });
 }
