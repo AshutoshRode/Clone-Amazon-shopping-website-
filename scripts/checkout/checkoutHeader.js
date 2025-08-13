@@ -9,7 +9,7 @@ export function  renderCheckoutHeader(){
     const checkoutHeaderHTML =`
     <div class="header-content">
       <div class="checkout-header-left-section">
-        <a href="amazon.html">
+        <a href="https://clone-amazon-shopping-websit.netlify.app/">
           <img class="amazon-logo" src="images/amazon-logo.png">
           <img class="amazon-mobile-logo" src="images/amazon-mobile-logo.png">
         </a>
